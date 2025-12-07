@@ -1,0 +1,135 @@
+name: Wine Quality Model Training Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  train-evaluate-model:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generate and store timestamp
+      id: timestamp
+      run: |
+        echo "timestamp=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+        echo "date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+    
+    - name: Train Gradient Boosting Model
+      run: |
+        python src/train_model.py
+        echo "Model training completed at ${{ steps.timestamp.outputs.date }}"
+    
+    - name: Evaluate Model Performance
+      run: |
+        python src/evaluate_model.py
+        echo "Model evaluation completed"
+    
+    - name: Run Tests (if any)
+      continue-on-error: true
+      run: |
+        if [ -d "test" ] && [ "$(ls -A test)" ]; then
+          python -m pytest test/
+        else
+          echo "No tests found, skipping..."
+        fi
+    
+    - name: Generate Performance Report
+      run: |
+        echo "# Model Training Report" > training_report.md
+        echo "## Timestamp: ${{ steps.timestamp.outputs.date }}" >> training_report.md
+        echo "" >> training_report.md
+        echo "### Model Details" >> training_report.md
+        echo "- Algorithm: Gradient Boosting Classifier" >> training_report.md
+        echo "- Dataset: Wine Quality (Red Wine)" >> training_report.md
+        echo "- Task: Binary Classification (Good vs Regular)" >> training_report.md
+        echo "" >> training_report.md
+        
+        # Extract metrics from latest file
+        if [ -f "models/version.txt" ]; then
+          VERSION=$(cat models/version.txt)
+          echo "- Version: $VERSION" >> training_report.md
+        fi
+        
+        echo "" >> training_report.md
+        echo "### Performance Metrics" >> training_report.md
+        
+        # Get latest metrics file
+        LATEST_METRICS=$(ls -t metrics/metrics_v*.json | head -1)
+        if [ -f "$LATEST_METRICS" ]; then
+          ACCURACY=$(python -c "import json; data=json.load(open('$LATEST_METRICS')); print(f\"{data['accuracy']:.4f}\")")
+          echo "- Accuracy: $ACCURACY" >> training_report.md
+        fi
+        
+        echo "" >> training_report.md
+        echo "Report generated successfully!" >> training_report.md
+    
+    - name: Upload Model Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: model-artifacts-${{ steps.timestamp.outputs.timestamp }}
+        path: |
+          models/
+          metrics/
+          training_report.md
+    
+    - name: Upload Dashboard
+      uses: actions/upload-artifact@v3
+      with:
+        name: dashboard
+        path: dashboard.py
+    
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add models/ metrics/ training_report.md || true
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update model v${{ steps.timestamp.outputs.timestamp }}"
+        git push || true
+    
+    - name: Create Release (on main branch)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: model-v${{ steps.timestamp.outputs.timestamp }}
+        release_name: Model Release ${{ steps.timestamp.outputs.date }}
+        body: |
+          ## Wine Quality Model Release
+          
+          **Training Date:** ${{ steps.timestamp.outputs.date }}
+          **Algorithm:** Gradient Boosting Classifier
+          
+          This release contains:
+          - Trained model files
+          - Performance metrics
+          - Evaluation visualizations
+          - Calibrated model
+          
+          Check the artifacts for detailed results.
+        draft: false
+        prerelease: false

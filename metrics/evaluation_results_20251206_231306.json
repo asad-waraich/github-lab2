@@ -1,0 +1,55 @@
+{
+    "metrics": {
+        "accuracy": 0.9375,
+        "f1_score": 0.7368421052631579,
+        "precision": 0.8484848484848485,
+        "recall": 0.6511627906976745,
+        "samples_evaluated": 320,
+        "positive_rate": 0.134375,
+        "model_type": "GradientBoostingClassifier",
+        "auc_roc": 0.9242716816388212,
+        "classification_report": {
+            "0": {
+                "precision": 0.9477351916376306,
+                "recall": 0.9819494584837545,
+                "f1-score": 0.9645390070921985,
+                "support": 277.0
+            },
+            "1": {
+                "precision": 0.8484848484848485,
+                "recall": 0.6511627906976745,
+                "f1-score": 0.7368421052631579,
+                "support": 43.0
+            },
+            "accuracy": 0.9375,
+            "macro avg": {
+                "precision": 0.8981100200612395,
+                "recall": 0.8165561245907145,
+                "f1-score": 0.8506905561776782,
+                "support": 320.0
+            },
+            "weighted avg": {
+                "precision": 0.9343984267764756,
+                "recall": 0.9375,
+                "f1-score": 0.9339422359089212,
+                "support": 320.0
+            }
+        },
+        "confusion_matrix": [
+            [
+                272,
+                5
+            ],
+            [
+                15,
+                28
+            ]
+        ]
+    },
+    "calibration": {
+        "calibrated": true,
+        "brier_score": 0.04206096179867371
+    },
+    "visualizations": "metrics/evaluation_dashboard_20251206_231306.png",
+    "timestamp": "20251206_231306"
+}
