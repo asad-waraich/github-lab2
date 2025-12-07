@@ -209,8 +209,7 @@ GradientBoostingClassifier(
   7. Create release
 
 ### Workflow Status
-![GitHub Actions](https://github.com/YOUR_USERNAME/github-lab2/actions/workflows/model_retraining_on_push.yml/badge.svg)
-
+![GitHub Actions](https://github.com/asadullahwaraich/mlops-lab2/actions/workflows/model_retraining_on_push.yml/badge.svg)
 ---
 
 ## 📝 Key Learning Outcomes
